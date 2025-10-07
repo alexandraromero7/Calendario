@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Calendario con Horario</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      margin: 0;
+    }
+    h1 { margin: 6px 0 14px; }
+
+    .contenedor {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 40px;
+      flex-wrap: nowrap;
+      position: relative;
+    }
+
+    .calendario {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      width: 500px;
+      max-width: 100%;
+      z-index: 2;
+      position: relative;
+    }
+
+    .eventos {
+      width: 300px;
+      min-height: 200px;
+      background: #fff;
+      padding: 14px;
+      border-radius: 10px;
+      box-shadow: 0 6px 18px rgba(0,0,0,.08);
+      position: relative;
+      z-index: 1;
+      display: none; /* panel oculto por defecto */
+    }
+
+    .dia {
+      text-align: center;
+      padding: 8px;
+      font-weight: 700;
+      background: #333;
+      color: #fff;
+      border-radius: 6px;
+    }
+
+    .celda {
+      padding: 18px 0;
+      text-align: center;
+      border-radius: 8px;
+      background: #6fbf73;
+      color: #fff;
+      cursor: pointer;
+      font-weight: 600;
+      user-select: none;
+      transition: transform .12s ease, background .2s;
+    }
+
+    .celda:hover { transform: scale(1.04); }
+
+    .fin-semana { background: #e74c3c !important; }
+    .vacio {
+      padding: 18px 0;
+      border-radius: 8px;
+      background: transparent !important;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .hoy {
+      background: #3498db !important;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      font-weight: 800;
+      border: 2px solid #fff;
+    }
+
+    .eventos h2 { margin: 0 0 8px; font-size: 1.1rem; color: #222; }
+    .eventos p, .eventos li { color: #444; margin: 4px 0; }
+
+    .botones { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
+    .boton-mes {
+      width: 40px; height: 40px; border-radius: 50%;
+      border: none; background: #333; color: #fff; font-size: 20px; cursor: pointer;
+    }
+    .boton-mes:hover { background: #555; }
+
+    ul { padding-left: 18px; }
+  </style>
+</head>
+<body>
+  <h1 id="titulo-mes"></h1>
+
+  <div class="contenedor">
+    <div>
+      <div id="calendario" class="calendario"></div>
+
+      <div class="botones">
+        <button id="anteriorMes" class="boton-mes">⬆️</button>
+        <button id="siguienteMes" class="boton-mes">⬇️</button>
+      </div>
+    </div>
+
+    <div class="eventos" id="eventos">
+      <!-- Panel oculto inicialmente -->
+    </div>
+  </div>
+
+  <script>
+    const calendario = document.getElementById('calendario');
+    const eventosDiv = document.getElementById('eventos');
+    const tituloMes = document.getElementById('titulo-mes');
+    const btnSiguiente = document.getElementById('siguienteMes');
+    const btnAnterior = document.getElementById('anteriorMes');
+
+    let hoy = new Date();
+    let mesActual = hoy.getMonth();
+    let anioActual = hoy.getFullYear();
+
+    const nombresMes = [
+      "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+      "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"
+    ];
+
+    const horario = {
+      1: [
+        "14:30 - 16:30 → IAW",
+        "16:30 - 17:30 → ISO",
+        "17:30 - 18:00 → P A T I O",
+        "18:00 - 19:00 → ISO",
+        "19:00 - 21:00 → BD + ASGBD"
+      ],
+      2: [
+        "16:30 - 17:30 → BD + ASGBD",
+        "17:30 - 18:00 → P A T I O",
+        "18:00 - 19:00 → BD + ASGBD",
+        "19:00 - 21:00 → DIG + SOS"
+      ],
+      3: [
+        "16:30 - 17:30 → Tutoría",
+        "17:30 - 18:00 → P A T I O",
+        "18:00 - 21:00 → PAX + SX FM"
+      ],
+      4: [
+        "15:30 - 16:30 → BD + ASGBD",
+        "16:30 - 17:30 → Ll. Marqués",
+        "17:30 - 18:00 → P A T I O",
+        "18:00 - 19:00 → Ll. Marqués",
+        "19:00 - 21:00 → PAX + SX FM"
+      ],
+      5: [
+        "14:30 - 16:30 → ISO",
+        "16:30 - 17:30 → PAS + SX + FM",
+        "17:30 - 18:00 → P A T I O",
+        "18:00 - 19:00 → PAS + SX + FM",
+        "19:00 - 21:00 → Anglès"
+      ]
+    };
+
+    function generarCalendario(mes, anio) {
+      calendario.innerHTML = `
+        <div class="dia">Lunes</div>
+        <div class="dia">Martes</div>
+        <div class="dia">Miércoles</div>
+        <div class="dia">Jueves</div>
+        <div class="dia">Viernes</div>
+        <div class="dia">Sábado</div>
+        <div class="dia">Domingo</div>
+      `;
+      tituloMes.textContent = `${nombresMes[mes]} ${anio}`;
+
+      const primerDiaMes = new Date(anio, mes, 1);
+      const totalDias = new Date(anio, mes + 1, 0).getDate();
+      let diaInicio = primerDiaMes.getDay();
+      diaInicio = diaInicio === 0 ? 6 : diaInicio - 1;
+
+      for (let i = 0; i < diaInicio; i++) {
+        const vacio = document.createElement('div');
+        vacio.className = 'vacio';
+        calendario.appendChild(vacio);
+      }
+
+      for (let dia = 1; dia <= totalDias; dia++) {
+        const celda = document.createElement('div');
+        celda.className = 'celda';
+        celda.textContent = dia;
+
+        const fecha = new Date(anio, mes, dia);
+        const diaSemana = fecha.getDay();
+
+        if (diaSemana === 6 || diaSemana === 0) celda.classList.add('fin-semana');
+
+        if (
+          dia === hoy.getDate() &&
+          mes === hoy.getMonth() &&
+          anio === hoy.getFullYear()
+        ) {
+          celda.classList.add('hoy');
+        }
+
+        celda.addEventListener('click', () => mostrarHorario(fecha));
+        calendario.appendChild(celda);
+      }
+
+      // Ocultar panel de eventos al cambiar de mes
+      eventosDiv.style.display = 'none';
+      eventosDiv.innerHTML = '';
+    }
+
+    function mostrarHorario(fecha) {
+      const diaSemana = fecha.getDay();
+      const dia = fecha.getDate();
+      const mes = nombresMes[fecha.getMonth()];
+
+      eventosDiv.style.display = 'block'; // Mostrar panel al hacer clic
+
+      if (diaSemana >= 1 && diaSemana <= 5) {
+        const clases = horario[diaSemana];
+        let lista = "<ul>";
+        clases.forEach(c => lista += `<li>${c}</li>`);
+        lista += "</ul>";
+        eventosDiv.innerHTML = `<h2>${dia} de ${mes} — ${["","Lunes","Martes","Miércoles","Jueves","Viernes"][diaSemana]}</h2>${lista}`;
+      } else {
+        eventosDiv.innerHTML = `<h2>${dia} de ${mes}</h2><p>🎉 Día libre — No hay clases.</p>`;
+      }
+    }
+
+    btnSiguiente.addEventListener('click', () => {
+      mesActual++;
+      if (mesActual > 11) { mesActual = 0; anioActual++; }
+      generarCalendario(mesActual, anioActual);
+    });
+
+    btnAnterior.addEventListener('click', () => {
+      mesActual--;
+      if (mesActual < 0) { mesActual = 11; anioActual--; }
+      generarCalendario(mesActual, anioActual);
+    });
+
+    generarCalendario(mesActual, anioActual);
+  </script>
+</body>
+</html>
